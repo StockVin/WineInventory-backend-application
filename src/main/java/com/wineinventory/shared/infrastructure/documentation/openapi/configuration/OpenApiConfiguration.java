@@ -5,14 +5,11 @@ import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-
-import java.util.List;
 
 @Configuration
 public class OpenApiConfiguration {
@@ -36,8 +33,8 @@ public class OpenApiConfiguration {
                         .license(new License().name("Apache 2.0")
                                 .url("https://springdoc.org")))
                 .externalDocs(new ExternalDocumentation()
-                        .description("StockSip Platform Wiki Documentation")
-                        .url("https://stocksip-platform.wiki.github.io/docs"));
+                        .description("WineInventory Platform Wiki Documentation")
+                        .url("https://wineinventory-platform.wiki.github.io/docs"));
 
         // Add a security scheme
 
@@ -52,9 +49,8 @@ public class OpenApiConfiguration {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")));
-        openApi.servers(List.of(
-                new Server().url("https://stocksip-back-end-application-prod.up.railway.app")
-        ));
+
+        // Return the OpenAPI configuration object with all the settings
         return openApi;
     }
 }

@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.wineInventory</groupId>
-    <artifactId>wineInventory</artifactId>
+    <artifactId>platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>wineInventory</name>
-    <description>wineInventory</description>
+    <name>wineInventory-back-end-application</name>
+    <description>wineInventory-platform</description>
     <url/>
     <licenses>
         <license/>
@@ -131,6 +131,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.wineinventory.WineInventoryBackEndApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
