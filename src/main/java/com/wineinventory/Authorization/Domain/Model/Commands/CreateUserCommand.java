@@ -1,4 +1,6 @@
 package com.wineinventory.Authorization.Domain.Model.Commands;
 
-public record CreateUserCommand() {
+import com.wineinventory.Authorization.Domain.Model.ValueObjects.UserRoles;
+
+public record CreateUserCommand(String username, String password, String validationPassword, UserRoles role) {
 }

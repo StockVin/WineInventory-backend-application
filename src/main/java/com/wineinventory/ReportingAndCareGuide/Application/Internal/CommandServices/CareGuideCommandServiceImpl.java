@@ -12,6 +12,6 @@ import java.util.Optional;
  * Handles the creation, update, and deletion of care guides.
  */
 @Service
-public class CareGuideCommandServiceImpl implements CareGuideCommandService {
+public class CareGuideCommandServiceImpl {
 
 }
