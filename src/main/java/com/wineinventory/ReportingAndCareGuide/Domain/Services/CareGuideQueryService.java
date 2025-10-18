@@ -6,7 +6,6 @@ import com.wineinventory.ReportingAndCareGuide.Domain.Model.Queries.GetCareGuide
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Queries.GetCareGuideByTypeAndDescriptionQuery;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @name CareGuideQueryService
