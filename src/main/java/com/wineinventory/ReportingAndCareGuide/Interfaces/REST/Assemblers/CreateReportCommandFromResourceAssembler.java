@@ -15,6 +15,13 @@ public class CreateReportCommandFromResourceAssembler {
      * @return The CreateReportCommand.
      */
     public static CreateReportCommand toCommandFromResource(CreateReportResource resource) {
-        return new CreateReportCommand(resource.productName(),resource.type(),resource.price(),resource.amount(), resource.reportDate(), resource.lostAmount());
+        return new CreateReportCommand(
+                resource.productName(),
+                resource.type(),
+                resource.price(),
+                resource.amount(),
+                resource.reportDate(),
+                resource.lostAmount(),
+                resource.productNameText());
     }
 }

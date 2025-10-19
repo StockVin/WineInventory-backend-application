@@ -15,12 +15,15 @@ public class ReportResourceFromEntityAssembler {
      * @return The Report resource.
      */
     public static ReportResource toResourceFromEntity(Report entity) {
-        return new ReportResource(entity.getId(),
+        return new ReportResource(
+                entity.getId(),
                 entity.getProductId().productId().toString(),
                 entity.getType(),
                 entity.getPrice(),
                 entity.getAmount(),
                 entity.getReportDate(),
-                entity.getLostAmount());
+                entity.getLostAmount(),
+                entity.getProductNameText()
+        );
     }
 }

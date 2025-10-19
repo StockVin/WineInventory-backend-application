@@ -60,6 +60,21 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     boolean existsByProductIdAndIdNot(String productId, Long id);
     
     /**
+     * Finds all reports owned by a user id.
+     */
+    List<Report> findAllByUserId(Long userId);
+
+    /**
+     * Finds a report by id and owner user id.
+     */
+    Optional<Report> findByIdAndUserId(Long id, Long userId);
+
+    /**
+     * Checks if a report exists by id and owner user id.
+     */
+    boolean existsByIdAndUserId(Long id, Long userId);
+
+    /**
      * Finds a Report entity by its ID.
      * @param id - the ID of the Report entity to search for.
      * @return an Optional containing the Report entity with the specified ID, or an empty Optional if no such entity exists.

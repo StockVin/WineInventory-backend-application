@@ -6,8 +6,10 @@ import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.DeleteRepor
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Exceptions.DuplicateReportException;
 import com.wineinventory.ReportingAndCareGuide.Domain.Services.ReportCommandService;
 import com.wineinventory.ReportingAndCareGuide.Infrastructure.Persistence.JPA.Repositories.ReportRepository;
+import com.wineinventory.Authorization.Infrastructure.Persistence.JPA.Repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -29,9 +31,11 @@ public class ReportCommandServiceImpl implements ReportCommandService {
     private static final String COMMAND_NULL_MSG = "CreateReportCommand cannot be null";
 
     private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
 
-    public ReportCommandServiceImpl(ReportRepository reportRepository) {
+    public ReportCommandServiceImpl(ReportRepository reportRepository, UserRepository userRepository) {
         this.reportRepository = Objects.requireNonNull(reportRepository, "ReportRepository cannot be null");
+        this.userRepository = Objects.requireNonNull(userRepository, "UserRepository cannot be null");
     }
 
     /**
@@ -51,7 +55,12 @@ public class ReportCommandServiceImpl implements ReportCommandService {
             throw new DuplicateReportException(REPORT_EXISTS_MSG);
         }
 
-        Report report = new Report(command);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long userId = userRepository.findByUsername(username)
+                .map(u -> u.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+
+        Report report = new Report(command, userId);
         Report savedReport = reportRepository.save(report);
 
         return Optional.of(savedReport);
@@ -66,7 +75,12 @@ public class ReportCommandServiceImpl implements ReportCommandService {
         if (command == null || command.id() == null) {
             throw new IllegalArgumentException("DeleteReportCommand and its ID cannot be null");
         }
-        if (!reportRepository.existsById(command.id())) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long userId = userRepository.findByUsername(username)
+                .map(u -> u.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+
+        if (!reportRepository.existsByIdAndUserId(command.id(), userId)) {
             throw new IllegalArgumentException("Report not found");
         }
         reportRepository.deleteById(command.id());

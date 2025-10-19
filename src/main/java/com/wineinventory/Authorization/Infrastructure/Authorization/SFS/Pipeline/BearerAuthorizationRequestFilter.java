@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 
@@ -28,7 +29,6 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BearerAuthorizationRequestFilter.class);
     private final BearerTokenService tokenService;
-
 
     @Qualifier("defaultUserDetailsService")
     private final UserDetailsService userDetailsService;
@@ -51,6 +51,8 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getServletPath();
+        String method = request.getMethod();
+        LOGGER.info("AuthFilter -> {} {}", method, path);
 
         if (isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
@@ -59,16 +61,30 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
 
         try {
             String token = tokenService.getBearerTokenFrom(request);
-            LOGGER.info("Token: {}", token);
-            if (token != null && tokenService.validateToken(token)) {
+            Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (token == null || token.isBlank()) {
+                LOGGER.info("No Bearer token found in Authorization header");
+            } else if (tokenService.validateToken(token)) {
                 String username = tokenService.getUsernameFromToken(token);
-                var userDetails = userDetailsService.loadUserByUsername(username);
-                SecurityContextHolder.getContext().setAuthentication(
-                        UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+                boolean sameUserAlreadySet = false;
+                if (currentAuth != null && currentAuth.isAuthenticated()) {
+                    try {
+                        sameUserAlreadySet = username.equalsIgnoreCase(currentAuth.getName());
+                    } catch (Exception ignored) { }
+                }
+
+                if (sameUserAlreadySet) {
+                    LOGGER.debug("Authentication already set for user: {}", username);
+                } else {
+                    LOGGER.info("Token is valid for user: {} — setting authentication", username);
+                    var userDetails = userDetailsService.loadUserByUsername(username);
+                    SecurityContextHolder.getContext().setAuthentication(
+                            UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+                }
             } else {
                 LOGGER.info("Token is not valid");
             }
-
         } catch (Exception e) {
             LOGGER.error("Cannot set user authentication: {}", e.getMessage());
         }

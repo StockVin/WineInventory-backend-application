@@ -80,6 +80,21 @@ public class Report extends AbstractAggregateRoot<Report> {
     @Setter
     private double lostAmount;
 
+    /**
+     * Optional human-readable product name for display purposes.
+     */
+    @Column(nullable = true)
+    @Getter
+    @Setter
+    private String productNameText;
+
+    /**
+     * Owner user id to scope the report to an account.
+     */
+    @Column(nullable = false)
+    @Getter
+    private Long userId;
+
     protected Report(){}
     /**
      * @summary Constructor.
@@ -94,6 +109,7 @@ public class Report extends AbstractAggregateRoot<Report> {
         this.amount = command.amount();
         this.reportDate = command.reportDate();
         this.lostAmount = command.lostAmount();
+        this.productNameText = command.productNameText();
 
         if (this.price < 0) {
             throw new IllegalArgumentException("The price not can be negative");
@@ -101,6 +117,16 @@ public class Report extends AbstractAggregateRoot<Report> {
         if (this.amount < 0) {
             throw new IllegalArgumentException("The amount not can be negative");
         }
+    }
+
+    /**
+     * Constructor with ownership.
+     * @param command Create command
+     * @param userId Owner user id
+     */
+    public Report(CreateReportCommand command, Long userId) {
+        this(command);
+        this.userId = userId;
     }
     /**
      * Updates the report information with the provided values.

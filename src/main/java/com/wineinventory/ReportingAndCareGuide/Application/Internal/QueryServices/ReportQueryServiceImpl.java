@@ -7,7 +7,9 @@ import com.wineinventory.ReportingAndCareGuide.Domain.Model.Queries.GetReportByR
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Queries.GetReportByTypeQuery;
 import com.wineinventory.ReportingAndCareGuide.Domain.Services.ReportQueryService;
 import com.wineinventory.ReportingAndCareGuide.Infrastructure.Persistence.JPA.Repositories.ReportRepository;
+import com.wineinventory.Authorization.Infrastructure.Persistence.JPA.Repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,9 +27,11 @@ import java.util.Optional;
 public class ReportQueryServiceImpl implements ReportQueryService {
 
     private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
 
-    public ReportQueryServiceImpl(ReportRepository reportRepository) {
+    public ReportQueryServiceImpl(ReportRepository reportRepository, UserRepository userRepository) {
         this.reportRepository = reportRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -37,7 +41,11 @@ public class ReportQueryServiceImpl implements ReportQueryService {
      */
     @Override
     public List<Report> getAllReports() {
-        return reportRepository.findAll();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long userId = userRepository.findByUsername(username)
+                .map(u -> u.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+        return reportRepository.findAllByUserId(userId);
     }
 
     /**
@@ -48,7 +56,11 @@ public class ReportQueryServiceImpl implements ReportQueryService {
      */
     @Override
     public Optional<Report> getReportById(Long id) {
-        return reportRepository.findById(id);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long userId = userRepository.findByUsername(username)
+                .map(u -> u.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+        return reportRepository.findByIdAndUserId(id, userId);
     }
     /**
      * Handles the retrieval of reports by product name.
@@ -74,7 +86,11 @@ public class ReportQueryServiceImpl implements ReportQueryService {
         if (query == null || query.id() == null) {
             throw new IllegalArgumentException("Query and report ID must not be null");
         }
-        return reportRepository.findById(query.id());
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long userId = userRepository.findByUsername(username)
+                .map(u -> u.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+        return reportRepository.findByIdAndUserId(query.id(), userId);
     }
     /**
      * Handles the retrieval of a report by its report date and lost amount.

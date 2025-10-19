@@ -12,6 +12,7 @@ import java.util.Date;
  * @param amount - the amount of the Report.
  * @param reportDate - the report date of the Report.
  * @param lostAmount - the lost amount of the Report.
+ * @param productNameText - optional human-readable product name of the Report.
  */
-public record ReportResource(Long id, String productName, String type, double price, double amount, Date reportDate, double lostAmount) {
+public record ReportResource(Long id, String productName, String type, double price, double amount, Date reportDate, double lostAmount, String productNameText) {
 }

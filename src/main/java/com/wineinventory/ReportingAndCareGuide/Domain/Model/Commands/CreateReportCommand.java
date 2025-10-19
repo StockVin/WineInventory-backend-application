@@ -13,6 +13,7 @@ import java.util.Date;
  * @param amount The quantity of the product (must be non-negative)
  * @param reportDate The date of the report (required)
  * @param lostAmount The amount of product lost (must be non-negative)
+ * @param productNameText Optional human-readable product name
  * @throws IllegalArgumentException if any validation rules are violated
  * @since 1.0
  */
@@ -22,7 +23,8 @@ public record CreateReportCommand(
         double price,
         double amount,
         Date reportDate,
-        double lostAmount) {
+        double lostAmount,
+        String productNameText) {
     /**
      * Validates the command.
      *
