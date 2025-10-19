@@ -28,7 +28,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
  * @since 1.0
  */
 @RestController
-@RequestMapping(value = "/api/v1/report", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/reports", produces = APPLICATION_JSON_VALUE)
 @Tag(name = "Report", description = "Endpoints for reports")
 public class ReportController {
     private final ReportCommandService reportCommandService;

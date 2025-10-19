@@ -90,6 +90,10 @@ public class TokenServiceImpl implements BearerTokenService {
      */
     @Override
     public boolean validateToken(String token) {
+        if (token == null || token.isBlank()) {
+            LOGGER.error("JWT Token is null or blank");
+            return false;
+        }
         try {
             Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
             LOGGER.info("Token is valid");
