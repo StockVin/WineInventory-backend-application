@@ -15,9 +15,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *
  * @since 1.0
  */
-@EnableJpaAuditing
-@EnableScheduling
-@SpringBootApplication
+    @EnableJpaAuditing
+    @EnableScheduling
+    @SpringBootApplication
 public class WineInventoryBackEndApplication {
 
     public static void main(String[] args) {
