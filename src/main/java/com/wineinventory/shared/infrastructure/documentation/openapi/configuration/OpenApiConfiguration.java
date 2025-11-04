@@ -46,6 +46,7 @@ public class OpenApiConfiguration {
                         .addSecuritySchemes(securitySchemeName,
                                 new SecurityScheme()
                                         .name(securitySchemeName)
+                                        .description("Use the Authorization header in the format: Bearer <JWT token>")
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")));

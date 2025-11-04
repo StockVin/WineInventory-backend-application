@@ -1,4 +1,4 @@
 package com.wineinventory.Authorization.Domain.Model.Queries;
 
-public class GetUserByEmailQuery {
+public record GetUserByEmailQuery(String email) {
 }

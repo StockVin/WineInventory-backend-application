@@ -1,4 +1,4 @@
 package com.wineinventory.Authorization.Domain.Model.Queries;
 
-public record GetAllUsersByAccountIdQuery() {
+public record GetAllUsersByAccountIdQuery(Long accountId) {
 }
