@@ -1,4 +1,8 @@
 package com.wineinventory.OrderOperationAndMonitoring.Domain.Model.Queries;
 
-public record GetAllSalesOrdersByBuyerIdQuery() {
+/**
+ * Consulta sencilla que modela la intención de recuperar todas las órdenes de un comprador
+ * específico para la capa de aplicación.
+ */
+public record GetAllSalesOrdersByBuyerIdQuery(Long buyerId) {
 }
