@@ -12,9 +12,8 @@ import java.util.Optional;
  */
 @Repository
 public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
-    /** Obtiene todas las órdenes que pertenecen a un comprador específico. */
+
     List<SalesOrder> findAllByBuyerId(Long buyerId);
 
-    /** Busca una orden por su número legible, útil para integraciones externas. */
     Optional<SalesOrder> findByOrderNumber(String orderNumber);
 }

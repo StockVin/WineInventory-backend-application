@@ -22,9 +22,7 @@ public record GenerateSalesOrderCommand(
         String notes
 ) {
 
-    /**
-     * Estructura ligera que describe cada ítem que se desea incluir en la orden.
-     */
+
     public record Item(Long productId, String productName, Integer quantity, Double unitPrice) {
     }
 }

@@ -26,19 +26,19 @@ public class SalesOrderQueryServiceImpl implements SalesOrderQueryService {
 
     @Override
     public List<SalesOrder> handle(GetAllSalesOrdersByBuyerIdQuery query) {
-        // Delegamos en el repositorio la recuperación filtrada por comprador.
+
         return salesOrderRepository.findAllByBuyerId(query.buyerId());
     }
 
     @Override
     public Optional<SalesOrder> getById(Long orderId) {
-        // Retorna un Optional para manejar la ausencia de resultados en capas superiores.
+
         return salesOrderRepository.findById(orderId);
     }
 
     @Override
     public List<SalesOrder> getAll() {
-        // Utiliza el método estándar de Spring Data para traer todas las órdenes.
+
         return salesOrderRepository.findAll();
     }
 }

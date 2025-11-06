@@ -15,24 +15,21 @@ import java.util.Objects;
 @Table(name = "sales_order_items")
 public class SalesOrderItem extends AuditableModel {
 
-    /** Referencia al agregado padre que contiene el ítem. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sales_order_id", nullable = false)
     private SalesOrder salesOrder;
 
-    /** Identificador del producto asociado al ítem. */
+
     @Column(nullable = false)
     private Long productId;
 
-    /** Nombre descriptivo del producto. */
+
     @Column(nullable = false)
     private String productName;
 
-    /** Cantidad solicitada del producto. */
     @Column(nullable = false)
     private Integer quantity;
 
-    /** Precio unitario del producto con su moneda. */
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "amount", column = @Column(name = "unit_price_amount", nullable = false)),
@@ -40,7 +37,6 @@ public class SalesOrderItem extends AuditableModel {
     })
     private Money unitPrice;
 
-    /** Subtotal del ítem (precio unitario por cantidad). */
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "amount", column = @Column(name = "line_total_amount", nullable = false)),
@@ -52,10 +48,7 @@ public class SalesOrderItem extends AuditableModel {
         // Required by JPA
     }
 
-    /**
-     * Construye un ítem garantizando que los datos requeridos estén presentes y sean válidos.
-     * El subtotal se calcula automáticamente en función de la cantidad y el precio unitario.
-     */
+
     public SalesOrderItem(Long productId, String productName, Integer quantity, Money unitPrice) {
         this.productId = Objects.requireNonNull(productId, "The product identifier is required");
         this.productName = Objects.requireNonNull(productName, "The product name is required");
@@ -67,9 +60,7 @@ public class SalesOrderItem extends AuditableModel {
         this.lineTotal = Money.of(unitPrice.amount() * quantity, unitPrice.currency());
     }
 
-    /**
-     * Asociar el ítem con la orden correspondiente para mantener la integridad relacional.
-     */
+
     public void assignOrder(SalesOrder order) {
         this.salesOrder = order;
     }

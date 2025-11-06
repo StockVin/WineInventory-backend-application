@@ -46,10 +46,10 @@ public class SalesOrderCommandServiceImpl implements SalesOrderCommandService {
         if (command.deliveryInformation() == null) {
             throw new IllegalArgumentException("Delivery information is required for the sales order");
         }
-        // Se crea el agregado inicializado con datos base.
+
         SalesOrder salesOrder = SalesOrder.create(command.buyerId(), command.customerEmail(), command.currency(),
                 command.deliveryInformation(), command.notes(), command.deliveryDate(), command.initialStatus());
-        // Cada ítem del comando se transforma en una entidad del dominio y se agrega a la orden.
+
         command.items().forEach(item -> {
             validateItem(item);
             Money unitPrice = Money.of(item.unitPrice(), command.currency());
@@ -57,23 +57,23 @@ public class SalesOrderCommandServiceImpl implements SalesOrderCommandService {
             salesOrder.addItem(salesOrderItem);
         });
         salesOrder.updateTaxAmount(command.taxAmount());
-        // Se persiste el agregado completo, delegando en JPA la cascada hacia los ítems.
+
         return salesOrderRepository.save(salesOrder);
     }
 
     @Override
     public SalesOrder updateStatus(Long orderId, OrderStatus newStatus) {
-        // Se recupera la orden o se lanza una excepción si no existe.
+
         SalesOrder salesOrder = salesOrderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Sales order with id " + orderId + " was not found"));
-        // El agregado contiene la lógica para manejar el cambio de estado y disparar eventos.
+
         salesOrder.updateStatus(newStatus);
         return salesOrderRepository.save(salesOrder);
     }
 
     @Override
     public void delete(Long orderId) {
-        // Se verifica la existencia antes de eliminar para ofrecer un error controlado.
+
         if (!salesOrderRepository.existsById(orderId)) {
             throw new EntityNotFoundException("Sales order with id " + orderId + " was not found");
         }
@@ -81,7 +81,7 @@ public class SalesOrderCommandServiceImpl implements SalesOrderCommandService {
     }
 
     private void validateItem(GenerateSalesOrderCommand.Item item) {
-        // Validaciones de datos para cada ítem antes de transformarlo en entidad del dominio.
+
         Objects.requireNonNull(item.productId(), "The item product identifier is required");
         Objects.requireNonNull(item.productName(), "The item product name is required");
         Objects.requireNonNull(item.quantity(), "The item quantity is required");
