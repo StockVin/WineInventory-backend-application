@@ -1,28 +1,78 @@
-package com.wineinventory.Domain.Model.Entities;
+package com.wineinventory.InventoryManagement.Domain.Model.Entities;
 
-import java.time.Instant;
-import java.util.UUID;
+import com.wineinventory.InventoryManagement.Domain.Model.Aggregates.Product;
+import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.ProductExitReasons;
+import com.wineinventory.shared.domain.model.entities.AuditableModel;
+import jakarta.persistence.*;
+import lombok.Getter;
+import org.springframework.data.annotation.CreatedDate;
+import java.util.Date;
 
-public class ProductExit {
-    
-    private final String logId;
-    private final String productId;
-    private final int quantity;
-    private final String outputType;
-    private final Instant timestamp;
-    
-    public ProductExit(String productId, int quantity, String outputType) {
-        this.logId = UUID.randomUUID().toString();
-        this.productId = productId;
-        this.quantity = quantity;
-        this.outputType = outputType;
-        this.timestamp = Instant.now();
+/**
+ * Product Exit Entity
+ *
+ * @summary
+ * The Product Exit class is an entity that represents a product exit in a warehouse.
+ * It can be the result in a product consumption, donation, expiration, etc.
+ * It is responsible for handling the CreateProductExitCommand command.
+ *
+ * @since 1.0.0
+ */
+@Entity
+public class ProductExit extends AuditableModel {
+
+    /**
+     * The identifier of the product that will exit.
+     */
+    @Getter
+    @ManyToOne
+    @JoinColumn(name = "productId", nullable = false)
+    private Product product;
+
+    /**
+     * The reason why the product is exiting the warehouse.
+     */
+    @Getter
+    @Column(nullable = false, updatable = false)
+    private ProductExitReasons exitReason;
+
+    /**
+     * The number of products which will exit the warehouse.
+     */
+    @Column(nullable = false, updatable = false)
+    private int productAmount;
+
+    /**
+     * The date which this exit is being registered.
+     */
+    @Column(nullable = false, updatable = false)
+    @Getter
+    @CreatedDate
+    private Date exitDate;
+
+    protected ProductExit() {
+        // Default constructor for JPA.
     }
 
-    // Getters
-    public String getLogId() { return logId; }
-    public String getProductId() { return productId; }
-    public int getQuantity() { return quantity; }
-    public String getOutputType() { return outputType; }
-    public Instant getTimestamp() { return timestamp; }
+    /**
+     * @summary Constructor.
+     * It creates a new ProductExit instance based on the CreateProductExitCommand command.
+     *
+     */
+    public ProductExit(Product product, ProductExitReasons exitReason, int productAmount) {
+        this.product = product;
+        this.exitReason = exitReason;
+        this.productAmount = productAmount;
+
+        //TODO: Add command for removing stock of a product with its id.
+    }
+
+    /**
+     * Method to get the reason of the exit of these products.
+     *
+     * @return The reason of exiting of these products.
+     */
+    public String getReason() {
+        return this.exitReason.name().toLowerCase();
+    }
 }

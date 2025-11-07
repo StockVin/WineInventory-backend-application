@@ -1,86 +1,186 @@
-package com.wineinventory.Domain.Model.Aggregates;
+package com.wineinventory.InventoryManagement.Domain.Model.Aggregates;
 
-import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.AccountId;
-
-import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.ImageUrl;
-import com.wineinventory.Domain.Model.ValueObjects.LiquorType;
-import com.wineinventory.Domain.Exceptions.ProductFailedCreationException;
+import com.wineinventory.InventoryManagement.Domain.Model.Commands.CreateProductCommand;
+import com.wineinventory.InventoryManagement.Domain.Model.Commands.UpdateProductCommand;
+import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.*;
+import com.wineinventory.shared.domain.model.valueobjects.Money;
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.List;
+
+/**
+ * Product Aggregate Root
+ *
+ *
+ * @summary
+ * The Product class is an aggregate root that represents a product in a warehouse.
+ * It is responsible for handling the CreateProductCommand command.
+ *
+ * @since 1.0
+ */
 @Entity
-@Table(name = "products")
 public class Product {
 
     @Id
-    private String id; 
-    
-    @Embedded
-    @AttributeOverrides({
-        @AttributeOverride(name = "value", column = @Column(name = "product_name"))
-    })
-    private String name;
-    
+    @Getter
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long productId;
+
+    /**
+     * The type of liquor the product is made of.
+     */
+    @Column(nullable = false)
+    @Getter
     @Enumerated(EnumType.STRING)
-    private LiquorType type;
-    
-    @Embedded
-    @AttributeOverrides({
-    @AttributeOverride(name = "value", column = @Column(name = "product_price"))
-    })
-    private Double price;
-    private LocalDate expirationDate;
-    private int currentStock;
-    private int minStockLevel;
-    private String location;
-    
-    @Embedded
-    @AttributeOverrides({
-    @AttributeOverride(name = "value", column = @Column(name = "image_url"))
-    })
-    private ImageUrl imageUrl; 
-    
-    @Embedded
-    private AccountId accountId; 
+    private LiquorType liquorType;
 
-    protected Product() {} 
+    /**
+     * The brand of the product.
+     * This is a reference to the Brand name of the product.
+     */
+    @Column(nullable = false)
+    @Getter
+    @Enumerated(EnumType.STRING)
+    private BrandName brandName;
 
-    public static Product create(String name, LiquorType type, double price, int initialStock, int minStock, String location, AccountId accountId, ImageUrl imageUrl, LocalDate expirationDate) {
-        if (name == null || name.isBlank() || price <= 0 || initialStock < 0) {
-            throw new ProductFailedCreationException("Datos de producto inválidos.");
-        }
-        
-        Product product = new Product();
-        product.id = UUID.randomUUID().toString(); 
-        product.name = name;
-        product.type = type;
-        product.price = price;
-        product.currentStock = initialStock;
-        product.minStockLevel = minStock;
-        product.location = location;
-        product.accountId = accountId;
-        product.imageUrl = imageUrl;
-        product.expirationDate = expirationDate;
-        return product;
+    /**
+     * The full name of the product.
+     */
+    @Column(nullable = false)
+    @Setter
+    @Getter
+    private ProductName productName;
+
+    /**
+     * The price the product can be sold to the customers of the liquor shop.
+     */
+    @Column(nullable = false)
+    @Setter
+    @Getter
+    private Money unitPrice;
+
+    /**
+     * The minimum number of products which can exist in a warehouse before generating an alert to the user.
+     * It's used to generate alerts in the platform.
+     */
+    @Column(nullable = false)
+    @Getter
+    private ProductMinimumStock minimumStock;
+
+    /**
+     * The image URL of the product.
+     * This is a value object that encapsulates the image URL.
+     */
+    @Getter
+    @Setter
+    private ImageUrl imageUrl;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @Getter
+    private List<Inventory> inventories;
+
+    /**
+     * The identifier of the user who provided this product to the liquor store owner.
+     */
+    @Column(nullable = false, updatable = false)
+    @Getter
+    private AccountId accountId;
+
+    protected Product() {
+        // Default constructor for JPA
     }
-    
-    public void decreaseStock(int quantity) {
-        if (quantity <= 0 || this.currentStock < quantity) {
-            throw new IllegalStateException("Stock insuficiente para el producto: " + name); 
-        }
-        this.currentStock -= quantity;
+
+    /**
+     * Constructor to create a new Product instance.
+     *
+     * @param providerId The identifier of the provider who provided this product.
+     * @param brand The brand of the product.
+     * @param liquorType The type of liquor the product is made of.
+     * @param additionalName Optional additional name for the product.
+     * @param price The price of the product in PEN currency.
+     * @param minimumStock The minimum stock of the product in the warehouse.
+     * @param imageUrl The image URL of the product.
+     */
+    public Product(AccountId providerId, String brand, String liquorType,
+                   String additionalName, double price,
+                   int minimumStock, String imageUrl) {
+        this.productName = new ProductName(additionalName);
+        this.minimumStock = new ProductMinimumStock(minimumStock);
+        this.unitPrice = new Money(price, "PEN");
+        this.liquorType = LiquorType.valueOf(liquorType);
+        this.brandName = BrandName.valueOf(brand);
+        this.accountId = providerId;
+        this.imageUrl = new ImageUrl(imageUrl);
+        this.inventories = List.of();
     }
 
-    // Getters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public LiquorType getType() { return type; }
-    public double getPrice() { return price; }
-    public LocalDate getExpirationDate() { return expirationDate; }
-    public int getCurrentStock() { return currentStock; }
-    public int getMinStockLevel() { return minStockLevel; }
-    public String getLocation() { return location; }
-    public ImageUrl getImageUrl() { return imageUrl; }
-    public AccountId getAccountId() { return accountId; }
+    /**
+     * Default constructor for handling commands
+     *
+     * @param command The command containing the information to create a new product.
+     */
+    public Product(CreateProductCommand command, String imageUrl) {
+        this.productName = new ProductName(command.name());
+        this.minimumStock = new ProductMinimumStock(command.minimumStock());
+        this.unitPrice = new Money(command.unitPriceAmount(), "PEN");
+        this.liquorType = LiquorType.valueOf(command.liquorType());
+        this.brandName = BrandName.valueOf(command.brandName());
+        this.accountId = new AccountId(command.accountId());
+        this.imageUrl = new ImageUrl(imageUrl);
+        this.inventories = List.of();
+    }
+
+    /**
+     * Sets the minimum stock for the product.
+     * @param newMinimumStock The new minimum stock to be set for the product.
+     */
+    public void setMinimumStock(int newMinimumStock) {
+        this.minimumStock = this.minimumStock.updateMinimumStock(newMinimumStock);
+    }
+
+    /**
+     * Updates the product information based on the provided command and updated image URL.
+     *
+     * @param command The command containing the updated product information.
+     * @param updatedImageUrl The new image URL for the product.
+     */
+    public void updateInformation(UpdateProductCommand command, String updatedImageUrl) {
+        this.productName = new ProductName(command.name());
+        this.liquorType = LiquorType.valueOf(command.liquorType());
+        this.brandName = BrandName.valueOf(command.brand());
+        setMinimumStock(command.minimumStock());
+        this.unitPrice = new Money(command.unitPriceAmount(), "PEN");
+        this.imageUrl = new ImageUrl(updatedImageUrl);
+    }
+
+    /**
+     * Verifies if the product has an inventory relation with the specified inventory.
+     *
+     * @param inventory The inventory to check for a relation with the product.
+     * @return True if the product has a relation with the specified inventory; otherwise, false.
+     */
+    private boolean existsWarehouseRelation(Inventory inventory) {
+        return inventories.contains(inventory);
+    }
+
+    /**
+     * This method adds a warehouse relation to the product.
+     *
+     * @param inventory The inventory to be added to the product's inventory relations.
+     */
+    public void addWarehouseRelation(Inventory inventory) {
+        if (existsWarehouseRelation(inventory)) return;
+        inventories.add(inventory);
+    }
+
+    /**
+     * This method removes a warehouse relation from the product.
+     *
+     * @param inventory The inventory to be removed from the product's inventory relations.
+     */
+    public void removeWarehouseRelation(Inventory inventory) {
+        inventories.remove(inventory);
+    }
 }
