@@ -1,5 +1,6 @@
 package com.wineinventory.InventoryManagement.Application.Internal.CommandServices;
 
+import com.wineinventory.InventoryManagement.Application.Internal.OutBoundServices.FileStorageService;
 import com.wineinventory.InventoryManagement.Domain.Model.Aggregates.Warehouse;
 import com.wineinventory.InventoryManagement.Domain.Model.Commands.CreateWarehouseCommand;
 import com.wineinventory.InventoryManagement.Domain.Model.Commands.DeleteWarehouseCommand;
@@ -7,7 +8,6 @@ import com.wineinventory.InventoryManagement.Domain.Model.Commands.UpdateWarehou
 import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.AccountId;
 import com.wineinventory.InventoryManagement.Domain.Services.WarehouseCommandService;
 import com.wineinventory.InventoryManagement.Infrastructure.Persistence.JPA.Repositories.WarehouseRepository;
-import com.wineinventory.ReportingAndCareGuide.Application.Internal.OutboundServices.Filestorage.FileStorageService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 

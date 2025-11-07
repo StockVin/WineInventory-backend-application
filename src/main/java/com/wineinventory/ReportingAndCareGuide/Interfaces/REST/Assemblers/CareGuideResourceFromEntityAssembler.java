@@ -10,7 +10,7 @@ public class CareGuideResourceFromEntityAssembler {
                 entity.getGuideName(),
                 entity.getType(),
                 entity.getDescription(),
-                entity.getImageUrl().value()
+                entity.getImageUrl() != null ? entity.getImageUrl().imageUrl() : null
         );
     }
 }

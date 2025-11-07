@@ -1,5 +1,6 @@
 package com.wineinventory.InventoryManagement.Application.Internal.CommandServices;
 
+import com.wineinventory.InventoryManagement.Application.Internal.OutBoundServices.FileStorageService;
 import com.wineinventory.InventoryManagement.Domain.Model.Aggregates.Product;
 import com.wineinventory.InventoryManagement.Domain.Model.Commands.CreateProductCommand;
 import com.wineinventory.InventoryManagement.Domain.Model.Commands.DeleteProductCommand;
@@ -12,7 +13,6 @@ import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.ProductNa
 import com.wineinventory.InventoryManagement.Domain.Services.ProductCommandService;
 import com.wineinventory.InventoryManagement.Infrastructure.Persistence.JPA.Repositories.InventoryRepository;
 import com.wineinventory.InventoryManagement.Infrastructure.Persistence.JPA.Repositories.ProductRepository;
-import com.wineinventory.ReportingAndCareGuide.Application.Internal.OutboundServices.Filestorage.FileStorageService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

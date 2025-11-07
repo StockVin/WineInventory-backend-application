@@ -2,7 +2,7 @@ package com.wineinventory.InventoryManagement.Infrastructure.FileStorage.Cloudin
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.wineinventory.ReportingAndCareGuide.Application.Internal.OutboundServices.Filestorage.FileStorageService;
+import com.wineinventory.InventoryManagement.Application.Internal.OutBoundServices.FileStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
