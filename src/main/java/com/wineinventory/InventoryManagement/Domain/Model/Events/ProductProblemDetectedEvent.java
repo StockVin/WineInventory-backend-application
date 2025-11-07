@@ -1,4 +1,10 @@
-package com.wineinventory.InventoryManagement.Domain.Model.Events;
+package com.wineinventory.Domain.Model.Events;
 
-public class ProductProblemDetectedEvent {
+import java.time.Instant;
+
+public record ProductProblemDetectedEvent(
+    String productId,
+    String problemDescription,
+    Instant occurredOn
+) {
 }
