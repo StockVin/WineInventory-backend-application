@@ -18,4 +18,5 @@ public interface CareGuideQueryService {
     List<CareGuide> handle(GetCareGuideByIdQuery query);
     List<CareGuide> handle (GetCareGuideByTypeAndDescriptionQuery query);
     List<CareGuide> handle(GetAllCareGuidesByAccountIdQuery query);
+    List<CareGuide> getAllCareGuides();
 }

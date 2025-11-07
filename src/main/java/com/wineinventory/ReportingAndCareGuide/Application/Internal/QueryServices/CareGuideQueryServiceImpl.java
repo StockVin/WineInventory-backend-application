@@ -9,7 +9,6 @@ import com.wineinventory.ReportingAndCareGuide.Infrastructure.Persistence.JPA.Re
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CareGuideQueryServiceImpl implements CareGuideQueryService {
@@ -37,5 +36,10 @@ public class CareGuideQueryServiceImpl implements CareGuideQueryService {
     @Override
     public List<CareGuide> handle(GetAllCareGuidesByAccountIdQuery query) {
         return careGuideRepository.findByAccountId(query.accountId());
+    }
+
+    @Override
+    public List<CareGuide> getAllCareGuides() {
+        return careGuideRepository.findAll();
     }
 }

@@ -6,6 +6,8 @@ import com.wineinventory.InventoryManagement.Domain.Services.WarehouseQueryServi
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.CreateCareGuideCommand;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.DeleteCareGuideCommand;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.UpdateCareGuideCommand;
+import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.CreateCareGuideWithoutProductCommand;
+
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Queries.GetCareGuideByIdQuery;
 import com.wineinventory.ReportingAndCareGuide.Domain.Services.CareGuideCommandService;
 import com.wineinventory.ReportingAndCareGuide.Domain.Services.CareGuideQueryService;
@@ -24,13 +26,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import java.util.Map;
-
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-
+/**
+ * CareGuideController
+ */
 @RestController
 @RequestMapping(value = "/api/v1/careguides", produces = APPLICATION_JSON_VALUE)
 @Tag(name = "CareGuides",description = "Available Care Guide Endpoints.")
@@ -52,6 +57,26 @@ public class CareGuideController {
         this.careGuideQueryService = careGuideQueryService;
     }
 
+    @GetMapping
+    @Operation(summary = "Get all care guides", description = "Retrieves all care guides")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Care guides retrieved successfully"),
+            @ApiResponse(responseCode = "204", description = "No care guides available")
+    })
+    public ResponseEntity<List<CareGuideResource>> getAllCareGuides() {
+        var careGuides = careGuideQueryService.getAllCareGuides();
+
+        if (careGuides == null || careGuides.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        var resources = careGuides.stream()
+                .map(CareGuideResourceFromEntityAssembler::toResourceFromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(resources);
+    }
+
     @PostMapping(value = "/{careGuideId}/careguide", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Add a care guide with file upload")
     @ApiResponses(value = {
@@ -65,12 +90,18 @@ public class CareGuideController {
             @RequestParam("guideName") String guideName,
             @RequestParam("type") String type,
             @RequestParam("description") String description,
+            @RequestParam(value = "accountId", required = false) String accountId,
+            @RequestParam(value = "productId", required = false) Long productId,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
         try {
             if (guideName == null || guideName.trim().isEmpty() ||
                     type == null || type.trim().isEmpty() ||
                     description == null || description.trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            if (accountId == null || accountId.trim().isEmpty()) {
                 return ResponseEntity.badRequest().build();
             }
 
@@ -91,17 +122,24 @@ public class CareGuideController {
                 }
             }
 
-            var command = new CreateCareGuideCommand(
+            var normalizedImageUrl = imageUrl != null ? imageUrl : "";
+
+            var careGuide = (productId != null && productId > 0)
+                    ? careGuideCommandService.handle(new CreateCareGuideCommand(
                     guideName,
                     type,
                     description,
-                    imageUrl != null ? imageUrl : "",
-                    "",
-                    null
-            );
-
-            // 4. Execute the command through the command service
-            var careGuide = careGuideCommandService.handle(command);
+                    normalizedImageUrl,
+                    accountId,
+                    productId
+            ))
+                    : careGuideCommandService.handle(new CreateCareGuideWithoutProductCommand(
+                    guideName,
+                    type,
+                    description,
+                    normalizedImageUrl,
+                    accountId
+            ));
 
             if (careGuide.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
