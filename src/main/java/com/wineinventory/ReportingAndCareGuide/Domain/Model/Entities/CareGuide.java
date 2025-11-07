@@ -1,11 +1,12 @@
 package com.wineinventory.ReportingAndCareGuide.Domain.Model.Entities;
 
+import com.wineinventory.InventoryManagement.Domain.Model.Aggregates.Product;
+import com.wineinventory.InventoryManagement.Domain.Model.Aggregates.Warehouse;
 import com.wineinventory.InventoryManagement.Domain.Model.ValueObjects.ImageUrl;
 import com.wineinventory.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 @Getter
 @Entity
 public class CareGuide extends AuditableModel {
@@ -14,8 +15,13 @@ public class CareGuide extends AuditableModel {
     @Column(nullable = false)
     private String accountId;
 
-    @Column(name = "product_id")
-    private Long productId;
+    @ManyToOne
+    @JoinColumn(name = "productId", nullable = true)
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "warehouseId", nullable = true)
+    private Warehouse warehouse;
 
     /**
      * The name of the care guide.
@@ -54,14 +60,15 @@ public class CareGuide extends AuditableModel {
     /**
      * Creates a new CareGuide instance with the specified details.
      *
-     * @param productId the associated product identifier (can be null)
+     * @param product the associated product (can be null)
+     * @param warehouse the associated warehouse (can be null)
      * @param guideName the name of the care guide (required)
      * @param type the type of the care guide (required)
      * @param description the description of the care guide (required)
      * @param imageUrl the URL of the care guide image (can be null, will use default if null or blank)
      * @throws IllegalArgumentException if guideName, type, or description is null or blank
      */
-    public CareGuide(String accountId, Long productId, String guideName, String type, String description, String imageUrl) {
+    public CareGuide(String accountId, Product product, Warehouse warehouse, String guideName, String type, String description, String imageUrl) {
         if (accountId == null || accountId.isBlank()) {
             throw new IllegalArgumentException("Account ID cannot be null or blank");
         }
@@ -76,7 +83,8 @@ public class CareGuide extends AuditableModel {
         }
 
         this.accountId = accountId;
-        this.productId = productId;
+        this.product = product;
+        this.warehouse = warehouse;
         this.guideName = guideName;
         this.type = type;
         this.description = description;

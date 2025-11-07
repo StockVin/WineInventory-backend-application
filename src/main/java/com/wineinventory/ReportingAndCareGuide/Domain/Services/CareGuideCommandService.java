@@ -3,7 +3,9 @@ package com.wineinventory.ReportingAndCareGuide.Domain.Services;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.CreateCareGuideCommand;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.CreateCareGuideWithoutProductCommand;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.DeleteCareGuideCommand;
+import com.wineinventory.ReportingAndCareGuide.Domain.Model.Commands.UpdateCareGuideCommand;
 import com.wineinventory.ReportingAndCareGuide.Domain.Model.Entities.CareGuide;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -22,6 +24,10 @@ public interface CareGuideCommandService {
      * @see CreateCareGuideCommand
      */
     Optional<CareGuide> handle(CreateCareGuideCommand command);
+
+    @Transactional
+    Optional<CareGuide> handle(UpdateCareGuideCommand command);
+
     /**
      * Handles the delete care guide command.
      * @param command The delete care guide command.
