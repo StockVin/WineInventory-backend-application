@@ -15,7 +15,7 @@ import com.wineinventory.AlertsAndNotifications.Domain.Model.ValueObjects.Wareho
  * @param message    The message content of the alert.
  * @param severity   The severity level of the alert.
  * @param type       The type of the alert.
- * @param accountId  El identificador único de la cuenta asociada a la alerta.
+ * @param accountId  The unique identifier of the account associated with the alert.
  * @param productId  The unique identifier of the product associated with the alert.
  * @param warehouseId The unique identifier of the warehouse associated with the alert.
  * @since 1.0

@@ -26,14 +26,5 @@ public class ModelBuilderExtensions {
      * annotations on entities.
      */
     public static void applyAlertsAndNotificationsConfiguration() {
-        // Alerts And Notifications ORM Mapping Rules
-
-        // Alert ORM Mapping Rules
-        // Note: In Spring Boot JPA, most mapping is done through annotations
-        // on the entities themselves (@Entity, @Column, @Embedded, etc.)
-
-        // Notification ORM Mapping Rules
-        // Note: In Spring Boot JPA, most mapping is done through annotations
-        // on the entities themselves (@Entity, @Column, @Embedded, etc.)
     }
 }
