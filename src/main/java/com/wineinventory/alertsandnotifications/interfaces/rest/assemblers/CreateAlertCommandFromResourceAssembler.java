@@ -1,7 +1,7 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.assemblers;
+package com.wineinventory.alertsandnotifications.interfaces.rest.assemblers;
 
 import com.wineinventory.alertsandnotifications.domain.model.commands.CreateAlertCommand;
-import com.wineinventory.alertsandnotifications.Interfaces.rest.resources.CreateAlertResource;
+import com.wineinventory.alertsandnotifications.interfaces.rest.resources.CreateAlertResource;
 
 /**
  * This static class is responsible for transforming a CreateAlertResource into a CreateAlertCommand.

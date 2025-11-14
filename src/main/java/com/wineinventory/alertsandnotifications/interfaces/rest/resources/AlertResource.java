@@ -1,4 +1,4 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.resources;
+package com.wineinventory.alertsandnotifications.interfaces.rest.resources;
 
 /**
  * This record defines the alert resource.

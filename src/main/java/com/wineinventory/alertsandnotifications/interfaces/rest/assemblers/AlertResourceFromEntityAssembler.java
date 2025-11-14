@@ -1,7 +1,7 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.assemblers;
+package com.wineinventory.alertsandnotifications.interfaces.rest.assemblers;
 
 import com.wineinventory.alertsandnotifications.domain.model.aggregates.Alert;
-import com.wineinventory.alertsandnotifications.Interfaces.rest.resources.AlertResource;
+import com.wineinventory.alertsandnotifications.interfaces.rest.resources.AlertResource;
 
 /**
  * This class is responsible for transforming an Alert entity into an AlertResource.

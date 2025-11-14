@@ -1,6 +1,6 @@
 package com.wineinventory.inventorymanagement.application.acl;
 
-import com.wineinventory.alertsandnotifications.Interfaces.acl.IAlertsAndNotificationsContextFacade;
+import com.wineinventory.alertsandnotifications.interfaces.acl.IAlertsAndNotificationsContextFacade;
 import org.springframework.stereotype.Service;
 
 /**

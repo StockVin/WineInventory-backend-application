@@ -1,10 +1,10 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.controllers;
+package com.wineinventory.alertsandnotifications.interfaces.rest.controllers;
 
 import com.wineinventory.alertsandnotifications.domain.model.queries.GetAllAlertsByAccountIdQuery;
 import com.wineinventory.alertsandnotifications.domain.model.valueobjects.AccountId;
 import com.wineinventory.alertsandnotifications.domain.services.AlertQueryService;
-import com.wineinventory.alertsandnotifications.Interfaces.rest.assemblers.AlertResourceFromEntityAssembler;
-import com.wineinventory.alertsandnotifications.Interfaces.rest.resources.AlertResource;
+import com.wineinventory.alertsandnotifications.interfaces.rest.assemblers.AlertResourceFromEntityAssembler;
+import com.wineinventory.alertsandnotifications.interfaces.rest.resources.AlertResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

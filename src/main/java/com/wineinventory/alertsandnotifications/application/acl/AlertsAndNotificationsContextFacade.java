@@ -7,7 +7,7 @@ import com.wineinventory.alertsandnotifications.domain.model.valueobjects.Produc
 import com.wineinventory.alertsandnotifications.domain.model.valueobjects.WarehouseId;
 import com.wineinventory.alertsandnotifications.domain.services.AlertCommandService;
 import com.wineinventory.alertsandnotifications.domain.services.AlertQueryService;
-import com.wineinventory.alertsandnotifications.Interfaces.acl.IAlertsAndNotificationsContextFacade;
+import com.wineinventory.alertsandnotifications.interfaces.acl.IAlertsAndNotificationsContextFacade;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
