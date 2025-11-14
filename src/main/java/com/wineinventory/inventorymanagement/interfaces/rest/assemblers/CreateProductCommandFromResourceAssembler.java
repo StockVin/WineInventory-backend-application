@@ -1,0 +1,28 @@
+package com.wineinventory.inventorymanagement.interfaces.rest.assemblers;
+
+import com.wineinventory.inventorymanagement.domain.model.commands.CreateProductCommand;
+import com.wineinventory.inventorymanagement.interfaces.rest.resources.CreateProductResource;
+
+/**
+ * This class is responsible for transforming a CreateProductResource into a CreateProductCommand.
+ */
+public class CreateProductCommandFromResourceAssembler {
+
+    /**
+     * This method transforms a CreateProductResource into a CreateProductCommand.
+     * @param resource The CreateProductResource to transform.
+     * @return The CreateProductCommand created from the resource.
+     */
+    public static CreateProductCommand toCommandFromResource(CreateProductResource resource, Long accountId) {
+
+        return new CreateProductCommand(
+                resource.name(),
+                resource.liquorType(),
+                resource.brandName(),
+                resource.unitPriceAmount(),
+                resource.minimumStock(),
+                resource.image(),
+                accountId
+        );
+    }
+}

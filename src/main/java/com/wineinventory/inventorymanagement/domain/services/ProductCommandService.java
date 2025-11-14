@@ -1,0 +1,23 @@
+package com.wineinventory.inventorymanagement.domain.services;
+
+import com.wineinventory.inventorymanagement.domain.model.aggregates.Product;
+import com.wineinventory.inventorymanagement.domain.model.commands.*;
+
+import java.util.Optional;
+
+/**
+ * ProductCommandService is an interface that defines methods for handling commands related to products.
+ *
+ * @summary
+ * Service interface for handling commands related to products.
+ *
+ * @since 1.0.0
+ */
+public interface ProductCommandService {
+
+    Optional<Product> handle(UpdateProductCommand command);
+    Optional<Product> handle(CreateProductCommand command);
+    Optional<Product> handle(UpdateProductMinimumStockCommand command);
+
+    void handle(DeleteProductCommand command);
+}
