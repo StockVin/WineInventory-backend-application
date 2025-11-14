@@ -1,42 +1,17 @@
-@startuml
+@startuml WineInventoryDomain
 skinparam monochrome true
 
 package "WineInventory.Shared.Domain" {
   package "Model" {
-    package "Events" {
-      interface "IEvent" as Shared_IEvent { }
+    package "Aggregates" {
+      class "AuditableAbstractAggregateRoot" as Shared_AuditableAbstractAggregateRoot <<abstract>> {
+        #createdAt: Date
+        #updatedAt: Date
+        --
+        +addDomainEvent(event: Object): void
+      }
     }
 
-    package "ValueObjects" {
-      class "AccountId" as Shared_AccountId <<record>> {
-        +Id: String
-      }
-      class "ProductId" as Shared_ProductId <<record>> {
-        +Id: String
-      }
-      class "InventoryId" as Shared_InventoryId <<record>> {
-        +Id: String
-      }
-      class "UserId" as Shared_UserId <<record>> {
-        +Id: String
-      }
-      class "Money" as Shared_Money <<record>> {
-        +amount: Double
-        +currency: String
-        --
-        +toString(): String
-      }
-      class "Email" as Shared_Email <<record>> {
-        +address: String
-        --
-        -isValid(address: String): Boolean
-      }
-      class "ImageUrl" as Shared_ImageUrl <<record>> {
-        +uri: String
-        --
-        +toString(): String
-      }
-    }
     package "Entities" {
       class "AuditableModel" as Shared_AuditableModel {
         +id: Long
@@ -44,23 +19,22 @@ package "WineInventory.Shared.Domain" {
         +updatedAt: Date
       }
     }
-  }
 
-  package "Repositories" {
-    interface "IBaseRepository" as Shared_IBaseRepository { }
+    package "ValueObjects" {
+      class "Money" as Shared_Money <<record>> {
+        +amount: Double
+        +currency: String
+        --
+        +toString(): String
+      }
+    }
   }
 }
 
-package "WineInventory.IAM.Domain" {
+package "WineInventory.Authorization.Domain" {
   package "Model" {
     package "Aggregates" {
       class "User" as Auth_User { }
-    }
-    package "Commands" {
-      class "CreateUserCommand" as CreateUserCommand { }
-      class "SignInCommand" as SignInCommand { }
-      class "SignUpCommand" as SignUpCommand { }
-      class "GoogleSignInCommand" as GoogleSignInCommand { }
     }
     package "Events" {
       class "AccountOwnerUserCreatedEvent" as AccountOwnerUserCreatedEvent { }
@@ -74,22 +48,28 @@ package "WineInventory.IAM.Domain" {
       enum "UserRoles" as UserRoles {
       }
     }
+    package "Commands" {
+      class "SignInCommand" as SignInCommand { }
+      class "SignUpCommand" as SignUpCommand { }
+      class "CreateUserCommand" as CreateUserCommand { }
+      class "GoogleSignInCommand" as GoogleSignInCommand { }
+    }
   }
+
 
   package "Services" {
     interface "UserCommandService" as UserCommandService { }
     interface "UserQueryService" as UserQueryService { }
-    class "GoogleAuthService" as GoogleAuthService { }
+    interface "GoogleAuthService" as GoogleAuthService { }
   }
+
 
   package "Repositories" {
     interface "UserRepository" as UserRepository { }
   }
 
+
   UserRepository ..> Auth_User : uses
-  UserRepository ..> Shared_IBaseRepository : implements
-  Auth_User "1" --> "1" Shared_UserId : userId
-  Auth_User "1" --> "1" Shared_Email : email
   Auth_User "1" --> "1" UserRoles : role
   UserCommandService ..> CreateUserCommand : uses
   UserQueryService ..> GetUserByIdQuery : uses
@@ -98,190 +78,190 @@ package "WineInventory.IAM.Domain" {
   GoogleAuthService ..> GoogleSignInCommand : uses
 }
 
+
 package "WineInventory.AlertsAndNotifications.Domain" {
   package "Model" {
-    class "Alert" as Alert {
-      +id: String
-      +title: String
-      +message: String
-      +severity: SeverityTypes
-      +type: AlertTypes
-      +productId: String
-      +warehouseId: String
-      +state: String
+    package "Aggregates" {
+      class "Alert" as Alert {
+        +alertId: Long
+        +title: String
+        +message: String
+        +severity: SeverityTypes
+        +type: AlertTypes
+        +resolvedAt: Date
+      }
     }
 
-    enum "SeverityTypes" as SeverityTypes {
-      WARNING
-      HIGH
-      MEDIUM
-      LOW
-    }
-
-    enum "AlertTypes" as AlertTypes {
-      PRODUCTLOWSTOCK
-      EXPIRATION_WARNING
-    }
     package "ValueObjects" {
       class "AccountId" as Alerts_AccountId { }
-      class "AlertState" as AlertState { }
+      class "ProductId" as Alerts_ProductId { }
+      class "WarehouseId" as Alerts_WarehouseId { }
+      enum "AlertState" as AlertState {
+        ACTIVE
+        NOT_READ
+        READ
+        RESOLVED
+      }
+      enum "SeverityTypes" as Alerts_SeverityTypes {
+        LOW
+        MEDIUM
+        HIGH
+        WARNING
+      }
+      enum "AlertTypes" as Alerts_AlertTypes {
+        PRODUCTLOWSTOCK
+        EXPIRATION_WARNING
+        SYSTEM_ALERT
+        MAINTENANCE
+      }
     }
+
     package "Commands" {
       class "CreateAlertCommand" as CreateAlertCommand { }
+      class "MarkAlertAsReadCommand" as MarkAlertAsReadCommand { }
     }
+
     package "Queries" {
       class "GetAlertByIdQuery" as GetAlertByIdQuery { }
     }
   }
 
+
   package "Repositories" {
-    interface "IAlertRepository" as IAlertRepository { }
+    interface "AlertRepository" as AlertRepository { }
   }
+
 
   package "Services" {
     interface "AlertCommandService" as AlertCommandService { }
     interface "AlertQueryService" as AlertQueryService { }
   }
 
-  Alert --> Shared_ProductId : "productId"
-  Alert --> Shared_InventoryId : "warehouseId"
-  IAlertRepository ..> Alert : uses
-  IAlertRepository ..> Shared_IBaseRepository : implements
+
+  Alert --> Alerts_ProductId : productId
+  Alert --> Alerts_WarehouseId : warehouseId
+  Alert --> AlertState : state
+  AlertRepository ..> Alert : manages
   AlertCommandService ..> CreateAlertCommand : uses
+  AlertCommandService ..> MarkAlertAsReadCommand : uses
   AlertQueryService ..> GetAlertByIdQuery : uses
 }
 
+
 package "WineInventory.InventoryManagement.Domain" {
   package "Model" {
-    class "InventoryItemProps" as InventoryItemProps {
-      +id: string
-      +name: string
-      +type: LiquorType
-      +price: number
-      +expirationDate?: Date
-      +currentStock: number
-      +minStockLevel: number
-      +location: string
-      +imageUrl: string
+    package "Aggregates" {
+      class "Product" as IM_Product {
+        +productId: Long
+        +liquorType: String
+        +brandName: String
+        +productName: String
+        +unitPrice: Money
+        +minimumStock: Integer
+        +imageUrl: String
+      }
+      class "Inventory" as IM_Inventory {
+        +inventoryId: Long
+        +productStock: Integer
+        +productState: ProductState
+        +productBestBeforeDate: LocalDate
+      }
+      class "Warehouse" as IM_Warehouse {
+        +warehouseId: Long
+        +name: String
+      }
     }
 
-    enum "LiquorType" as LiquorType {
-      WINE
-      WHISKY
-      RUM
-      TEQUILA
-      SODA
-      SNACK
-    }
-    package "Aggregates" {
-      class "Product" as IM_Product { }
-      class "Inventory" as IM_Inventory { }
-    }
     package "Entities" {
       class "ProductExit" as IM_ProductExit { }
     }
-    package "Commands" {
-      class "CreateProductCommand" as CreateProductCommand { }
-      class "DeleteProductCommand" as DeleteProductCommand { }
-    }
+
     package "Events" {
       class "ProductProblemDetectedEvent" as ProductProblemDetectedEvent { }
     }
+
+    package "Commands" {
+      class "CreateProductCommand" as CreateProductCommand { }
+      class "UpdateProductCommand" as UpdateProductCommand { }
+      class "DeleteProductCommand" as DeleteProductCommand { }
+      class "CreateWarehouseCommand" as CreateWarehouseCommand { }
+      class "UpdateWarehouseCommand" as UpdateWarehouseCommand { }
+    }
+
     package "Queries" {
       class "GetAllProductsByAccountIdQuery" as GetAllProductsByAccountIdQuery { }
+      class "GetProductByIdQuery" as GetProductByIdQuery { }
+      class "GetAllWarehousesByAccountIdQuery" as GetAllWarehousesByAccountIdQuery { }
     }
-    package "Exceptions" {
-      class "ProductFailedCreationException" as ProductFailedCreationException { }
-    }
+
     package "ValueObjects" {
       class "AccountId" as IM_AccountId { }
+      enum "LiquorType" as IM_LiquorType {
+        WINE
+        WHISKY
+        RUM
+        TEQUILA
+        SODA
+        SNACK
+      }
+      enum "ProductState" as IM_ProductState {
+        With_Stock
+        Out_Of_Stock
+      }
+      class "ImageUrl" as IM_ImageUrl { }
+      class "ProductName" as IM_ProductName { }
+      class "WarehousesAddress" as IM_WarehousesAddress { }
     }
   }
 
+
   package "Repositories" {
-    interface "IInventoryRepository" as IInventoryRepository { }
     interface "ProductRepository" as ProductRepository { }
+    interface "InventoryRepository" as InventoryRepository { }
+    interface "WarehouseRepository" as WarehouseRepository { }
   }
+
 
   package "Services" {
-    interface "InventoryCommandService" as InventoryCommandService { }
-    interface "InventoryQueryService" as InventoryQueryService { }
     interface "ProductCommandService" as ProductCommandService { }
     interface "ProductQueryService" as ProductQueryService { }
+    interface "InventoryCommandService" as InventoryCommandService { }
+    interface "InventoryQueryService" as InventoryQueryService { }
+    interface "WarehouseCommandService" as WarehouseCommandService { }
+    interface "WarehouseQueryService" as WarehouseQueryService { }
   }
 
-  InventoryItemProps --> Shared_InventoryId : "inventory id"
-  IInventoryRepository ..> InventoryItemProps : uses
-  IInventoryRepository ..> Shared_IBaseRepository : implements
-  ProductRepository ..> IM_Product : uses
-  ProductRepository ..> Shared_IBaseRepository : implements
-  ProductQueryService ..> GetAllProductsByAccountIdQuery : uses
+
+  IM_Product "1" --> "*" IM_Inventory : inventories
+  IM_Inventory "*" --> "1" IM_Product : product
+  IM_Inventory "*" --> "1" IM_Warehouse : warehouse
+  IM_Product --> Shared_Money : unitPrice
+  IM_Product --> IM_ProductName : productName
+  IM_Product --> IM_ImageUrl : imageUrl
+  IM_Product --> IM_LiquorType : liquorType
+  IM_Product --> IM_AccountId : accountId
+  IM_Inventory --> IM_ProductState : productState
+  IM_Warehouse --> IM_WarehousesAddress : address
+  ProductRepository ..> IM_Product : manages
+  InventoryRepository ..> IM_Inventory : manages
+  WarehouseRepository ..> IM_Warehouse : manages
   ProductCommandService ..> CreateProductCommand : uses
+  ProductCommandService ..> UpdateProductCommand : uses
   ProductCommandService ..> DeleteProductCommand : uses
+  ProductQueryService ..> GetProductByIdQuery : uses
+  ProductQueryService ..> GetAllProductsByAccountIdQuery : uses
+  WarehouseCommandService ..> CreateWarehouseCommand : uses
+  WarehouseCommandService ..> UpdateWarehouseCommand : uses
+  WarehouseQueryService ..> GetAllWarehousesByAccountIdQuery : uses
 }
 
 package "WineInventory.OrderOperationAndMonitoring.Domain" {
   package "Model" {
-    class "CatalogItem" as CatalogItem {
-      +id: string
-      +name: string
-      +varietal: string
-      +vintage: number
-      +origin: string
-      +price: number
-      +imageUrl?: string
-      +tastingNotes?: string
-    }
-
-    class "OrderItem" as OrderItem {
-      +id: string
-      +catalogItem: CatalogItem
-      +quantity: number
-      +unitPrice: number
-      +lineTotal: number
-    }
-
-    class "Order" as Order {
-      +id: string
-      +code: string
-      +customerName: string
-      +customerEmail?: string
-      +status: OrderStatus
-      +createdAt: string
-      +expectedDelivery?: string
-      +notes?: string
-      +items: OrderItem[]
-      +subtotal: number
-      +tax: number
-      +total: number
-    }
-
-    class "NewOrderItemInput" as NewOrderItemInput {
-      +catalogItemId: string
-      +quantity: number
-    }
-
-    class "NewOrderInput" as NewOrderInput {
-      +customerName: string
-      +customerEmail?: string
-      +notes?: string
-      +status: OrderStatus
-      +createdAt: string
-      +expectedDelivery: string
-      +items: NewOrderItemInput[]
-    }
-
-    enum "OrderStatus" as OrderStatus {
-      NEW
-      PROCESSING
-      COMPLETED
-      CANCELED
-    }
     package "Aggregates" {
-      class "SalesOrder" as SalesOrder { }
+      class "SalesOrder" as OOM_SalesOrder { }
     }
     package "Entities" {
-      class "SalesOrderItem" as SalesOrderItem { }
+      class "SalesOrderItem" as OOM_SalesOrderItem { }
     }
     package "Commands" {
       class "GenerateSalesOrderCommand" as GenerateSalesOrderCommand { }
@@ -297,71 +277,67 @@ package "WineInventory.OrderOperationAndMonitoring.Domain" {
     }
   }
 
+
   package "Services" {
     interface "SalesOrderCommandService" as SalesOrderCommandService { }
   }
+
 
   package "Repositories" {
     interface "SalesOrderRepository" as SalesOrderRepository { }
   }
 
-  OrderItem --> CatalogItem : references
-  SalesOrderRepository ..> SalesOrder : uses
-  SalesOrderRepository ..> Shared_IBaseRepository : implements
-  SalesOrder "1" o-- "*" SalesOrderItem : contains
-  SalesOrderItem "1" --> "1" IM_Product : references
-  SalesOrder ..> Deliverable : implements
-  GenerateSalesOrderCommand ..> SalesOrder : creates
+
+  OOM_SalesOrder "1" o-- "*" OOM_SalesOrderItem : contains
+  OOM_SalesOrderItem "1" --> "1" IM_Product : product
+  OOM_SalesOrder ..> Deliverable : implements
+  SalesOrderRepository ..> OOM_SalesOrder : uses
   SalesOrderCommandService ..> GenerateSalesOrderCommand : uses
 }
 
 package "WineInventory.ProfileManagement.Domain" {
   package "Model" {
-    class "AccountStatus" as AccountStatus {
-      +planName: String
-      +renewalDate: String
-      +supportContact: String
-      +statusLabel: String
+    package "Aggregates" {
+      class "Profile" as Profile {
+        +profileId: Long
+        +fullName: String
+        +role: String
+        +email: String
+        +phone: String
+        +location: String
+        +username: String
+        +avatarUrl: String
+      }
     }
 
-    class "Profile" as Profile {
-      +id: String
-      +fullName: String
-      +role: String
-      +email: String
-      +phone: String
-      +location: String
-      +username: String
-      +avatarUrl?: String
-      +accountStatus: AccountStatus
-      +selectedPlanId: String
-      +lastUpdated?: string
-    }
     package "ValueObjects" {
       class "PersonName" as PersonName { }
     }
+
     package "Commands" {
       class "CreateProfileCommand" as CreateProfileCommand { }
       class "UpdateProfileCommand" as UpdateProfileCommand { }
     }
+
     package "Queries" {
       class "GetAllProfilesQuery" as GetAllProfilesQuery { }
     }
   }
+
 
   package "Services" {
     interface "ProfileCommandService" as ProfileCommandService { }
     interface "ProfileQueryService" as ProfileQueryService { }
   }
 
+
   package "Repositories" {
     interface "ProfileRepository" as ProfileRepository { }
   }
 
-  Profile --> Shared_UserId : "userId"
-  Profile "1" --> "1" PersonName : relates to
-  ProfileRepository ..> Profile : uses
-  ProfileRepository ..> Shared_IBaseRepository : implements
+
+  Profile --> PersonName : name
+  ProfileRepository ..> Profile : manages
   ProfileCommandService ..> CreateProfileCommand : uses
   ProfileCommandService ..> UpdateProfileCommand : uses
   ProfileQueryService ..> GetAllProfilesQuery : uses
@@ -369,61 +345,71 @@ package "WineInventory.ProfileManagement.Domain" {
 
 package "WineInventory.ReportingAndCareGuide.Domain" {
   package "Model" {
-    class "CareGuide" as CareGuide {
-      +name: String
-      +type: String
-      +description: String
-      +imageUrl: String
+    package "Aggregates" {
+      class "CareGuide" as CareGuide {
+        +careGuideId: Long
+        +name: String
+        +type: String
+        +description: String
+        +imageUrl: String
+      }
+      class "Report" as Report {
+        +reportId: Long
+        +products: String
+        +type: String
+        +price: Double
+        +amount: Double
+        +date: Date
+        +lost: Double
+      }
     }
 
-    class "Report" as Report {
-      +id: number
-      +products: String
-      +type: String
-      +price: number
-      +amount: number
-      +date: string
-      +lost: number
-    }
     package "Commands" {
       class "CreateReportCommand" as CreateReportCommand { }
       class "DeleteReportCommand" as DeleteReportCommand { }
     }
+
     package "Queries" {
       class "GetReportByIdQuery" as GetReportByIdQuery { }
       class "GetReportByProductNameQuery" as GetReportByProductNameQuery { }
       class "GetReportByReportDateAndLostAmountQuery" as GetReportByReportDateAndLostAmountQuery { }
       class "GetReportByTypeQuery" as GetReportByTypeQuery { }
     }
-    package "Exceptions" {
-      class "DuplicateReportException" as DuplicateReportException { }
-    }
+
     package "ValueObjects" {
       class "ProductId" as RC_ProductId { }
     }
+
+    package "Exceptions" {
+      class "DuplicateReportException" as DuplicateReportException { }
+    }
   }
+
 
   package "Repositories" {
     interface "ReportRepository" as ReportRepository { }
     interface "CareGuideRepository" as CareGuideRepository { }
   }
 
+
   package "Services" {
     interface "ReportCommandService" as ReportCommandService { }
     interface "ReportQueryService" as ReportQueryService { }
     class "ImageService" as ImageService { }
   }
+
+
   ReportCommandService ..> CreateReportCommand : uses
   ReportCommandService ..> DeleteReportCommand : uses
   ReportQueryService ..> GetReportByIdQuery : uses
   ReportQueryService ..> GetReportByProductNameQuery : uses
   ReportQueryService ..> GetReportByReportDateAndLostAmountQuery : uses
   ReportQueryService ..> GetReportByTypeQuery : uses
-  CareGuideRepository ..> CareGuide : uses
-  ReportRepository ..> Report : uses
-  Report "1" --> "1" RC_ProductId : relates to
-  CareGuideRepository ..> Shared_IBaseRepository : implements
-  ReportRepository ..> Shared_IBaseRepository : implements
+  ReportRepository ..> Report : manages
+  CareGuideRepository ..> CareGuide : manages
+  Report --> RC_ProductId : product
+  ImageService ..> CareGuide : process images
 }
+
 
 @enduml
