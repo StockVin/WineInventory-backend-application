@@ -1,4 +1,4 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.assemblers;
+package com.wineinventory.alertsandnotifications.interfaces.rest.assemblers;
 
 import com.wineinventory.alertsandnotifications.domain.model.commands.MarkAlertAsReadCommand;
 

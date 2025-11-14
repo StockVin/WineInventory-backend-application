@@ -1,4 +1,4 @@
-package com.wineinventory.alertsandnotifications.Interfaces.rest.resources;
+package com.wineinventory.alertsandnotifications.interfaces.rest.resources;
 
 import com.wineinventory.alertsandnotifications.domain.model.valueobjects.AccountId;
 import com.wineinventory.alertsandnotifications.domain.model.valueobjects.ProductId;

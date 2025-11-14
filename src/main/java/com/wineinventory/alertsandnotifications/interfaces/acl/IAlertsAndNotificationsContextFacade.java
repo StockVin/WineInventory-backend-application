@@ -1,4 +1,4 @@
-package com.wineinventory.alertsandnotifications.Interfaces.acl;
+package com.wineinventory.alertsandnotifications.interfaces.acl;
 
 /**
  * Interface for the Alerts and Notifications context facade.
