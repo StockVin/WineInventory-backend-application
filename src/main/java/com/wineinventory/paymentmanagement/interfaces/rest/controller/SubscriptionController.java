@@ -33,9 +33,7 @@ public class SubscriptionController {
         this.payPalSubscriptionService = payPalSubscriptionService;
     }
 
-    /** ----------------------------------------------------------
-     *   CREAR SUSCRIPCIÓN — PASO 1: CREAR LOCAL & EN PAYPAL
-     * ---------------------------------------------------------- */
+
     @PostMapping
     public SubscriptionCreatedResource create(@RequestBody CreateSubscriptionResource resource) {
 
@@ -68,9 +66,7 @@ public class SubscriptionController {
         );
     }
 
-    /** ----------------------------------------------------------
-     *   CANCELAR SUSCRIPCIÓN
-     * ---------------------------------------------------------- */
+
     @PostMapping("/{id}/cancel")
     public SubscriptionResource cancel(@PathVariable Long id) {
         var command = new CancelSubscriptionCommand(id);
@@ -78,18 +74,14 @@ public class SubscriptionController {
         return SubscriptionResourceAssembler.toResource(subscription);
     }
 
-    /** ----------------------------------------------------------
-     *   OBTENER SUSCRIPCIÓN POR ID
-     * ---------------------------------------------------------- */
+
     @GetMapping("/{id}")
     public SubscriptionResource getById(@PathVariable Long id) {
         var subscription = queryService.handle(id);
         return SubscriptionResourceAssembler.toResource(subscription);
     }
 
-    /** ----------------------------------------------------------
-     *   OBTENER SUSCRIPCIONES DE UN USUARIO
-     * ---------------------------------------------------------- */
+
     @GetMapping("/user/{userId}")
     public List<SubscriptionResource> getByUser(@PathVariable Long userId) {
         var subscriptions = queryService.handleFindByUser(userId);

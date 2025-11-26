@@ -42,9 +42,7 @@ public class PayPalWebhookController {
 
         switch (eventType) {
 
-            // -----------------------------
-            // NUEVO: Al crear la suscripción
-            // -----------------------------
+
             case "BILLING.SUBSCRIPTION.CREATED" -> {
                 subscriptionRepository.findByPaypalSubscriptionId(subscriptionId)
                         .ifPresent(subscription -> {
@@ -55,9 +53,7 @@ public class PayPalWebhookController {
                 return ResponseEntity.ok("Subscription created event processed");
             }
 
-            // -----------------------------
-            // SUSCRIPCIÓN ACTIVADA
-            // -----------------------------
+
             case "BILLING.SUBSCRIPTION.ACTIVATED" -> {
 
                 // Next billing date viene en "billing_info.next_billing_time"
@@ -88,9 +84,6 @@ public class PayPalWebhookController {
                 return ResponseEntity.ok("Subscription activated");
             }
 
-            // -----------------------------
-            // NUEVO: Primer pago completado
-            // -----------------------------
             case "PAYMENT.SALE.COMPLETED" -> {
 
                 // Este evento llega con "billing_agreement_id"
@@ -108,9 +101,7 @@ public class PayPalWebhookController {
                 return ResponseEntity.ok("Payment completed and subscription updated");
             }
 
-            // -----------------------------
-            // CANCELACIÓN
-            // -----------------------------
+
             case "BILLING.SUBSCRIPTION.CANCELLED" -> {
                 subscriptionRepository.findByPaypalSubscriptionId(subscriptionId)
                         .ifPresent(subscription -> {
