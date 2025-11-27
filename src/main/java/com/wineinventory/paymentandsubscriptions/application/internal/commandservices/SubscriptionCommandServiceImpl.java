@@ -5,8 +5,6 @@ import com.wineinventory.paymentandsubscriptions.domain.model.commands.CreateSub
 import com.wineinventory.paymentandsubscriptions.domain.model.commands.CancelSubscriptionCommand;
 import com.wineinventory.paymentandsubscriptions.domain.model.commands.WebhookPaymentCommand;
 import com.wineinventory.paymentandsubscriptions.domain.repositories.SubscriptionRepository;
-import com.wineinventory.paymentandsubscriptions.infrastructure.external.paypal.PayPalSubscriptionService;
-import com.wineinventory.paymentandsubscriptions.domain.model.queries.PayPalCreateSubscriptionQuery;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,45 +13,26 @@ import java.time.LocalDateTime;
 public class SubscriptionCommandServiceImpl implements SubscriptionCommandService {
 
     private final SubscriptionRepository subscriptionRepository;
-    private final PayPalSubscriptionService payPalSubscriptionService;
 
     public SubscriptionCommandServiceImpl(
-            SubscriptionRepository subscriptionRepository,
-            PayPalSubscriptionService payPalSubscriptionService) {
+            SubscriptionRepository subscriptionRepository) {
         this.subscriptionRepository = subscriptionRepository;
-        this.payPalSubscriptionService = payPalSubscriptionService;
-    }
-
-    private String extractApprovalLink(PayPalCreateSubscriptionQuery response) {
-        return response.links().stream()
-                .filter(link -> link.rel().equals("approve"))
-                .findFirst()
-                .map(PayPalCreateSubscriptionQuery.PayPalLink::href)
-                .orElse(null);
     }
 
     @Override
     public Subscription handle(CreateSubscriptionCommand command) {
-
-        PayPalCreateSubscriptionQuery response =
-                payPalSubscriptionService.createSubscription(command.paypalPlanId());
-
-        String paypalSubscriptionId = response.id();
-        String status = response.status();
-        String approvalLink = extractApprovalLink(response);
+        // Always create subscription with the provided PayPal subscription ID
         Subscription subscription = new Subscription(
                 command.userId(),
                 command.planId(),
-                paypalSubscriptionId,
-                status,
+                command.paypalSubscriptionId(),
+                "ACTIVE",
                 command.currency(),
                 command.amount(),
                 LocalDateTime.now(),
                 null
         );
-        subscriptionRepository.save(subscription);
-
-        return subscription;
+        return subscriptionRepository.save(subscription);
     }
 
     @Override

@@ -12,4 +12,6 @@ public interface PlanJpaRepository extends JpaRepository<Plan, Long> {
     Optional<Plan> findByPlanId(String planId);
 
     Optional<Plan> findByPlanType(String planType);
+
+    Optional<Plan> findByPaypalSubscriptionId(String paypalSubscriptionId);
 }

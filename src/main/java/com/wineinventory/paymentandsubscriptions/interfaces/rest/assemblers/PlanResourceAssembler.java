@@ -8,6 +8,8 @@ public class PlanResourceAssembler {
     public static PlanResource toResource(Plan plan) {
         return new PlanResource(
                 plan.getPlanId(),
+                plan.getPaypalPlanId(),
+                plan.getPaypalSubscriptionId(),
                 plan.getPlanType(),
                 plan.getDescription(),
                 plan.getPaymentFrequency(),

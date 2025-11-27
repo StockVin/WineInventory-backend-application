@@ -17,7 +17,7 @@ public class Subscription {
     @Column(nullable = false)
     private Long planId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true)
     private String paypalSubscriptionId;
 
     @Column(nullable = false)
@@ -102,6 +102,9 @@ public class Subscription {
     }
     public void setStatus(String status) {
         this.status = status;
+    }
+    public void setPaypalSubscriptionId(String paypalSubscriptionId) {
+        this.paypalSubscriptionId = paypalSubscriptionId;
     }
 
 

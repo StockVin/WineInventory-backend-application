@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionJpaRepository extends JpaRepository<Subscription, Long> {
 
-    Optional<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId);
+    List<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId);
 
     List<Subscription> findByUserId(Long userId);
 
