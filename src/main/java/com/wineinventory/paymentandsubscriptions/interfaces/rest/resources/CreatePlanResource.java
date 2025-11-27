@@ -6,5 +6,6 @@ public record CreatePlanResource(
         String description,
         Double price,
         String currency,
-        String paypalPlanId
+        String paypalPlanId,
+        String paypalSubscriptionId
 ) {}

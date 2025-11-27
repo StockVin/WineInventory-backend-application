@@ -1,5 +1,6 @@
 package com.wineinventory.paymentandsubscriptions.interfaces.rest.controller;
 
+import com.wineinventory.paymentandsubscriptions.domain.repositories.PlanRepository;
 import com.wineinventory.paymentandsubscriptions.interfaces.rest.assemblers.CreateSubscriptionAssembler;
 import com.wineinventory.paymentandsubscriptions.interfaces.rest.resources.UpgradeSubscriptionResource;
 import com.wineinventory.paymentandsubscriptions.interfaces.rest.assemblers.SubscriptionAssembler;
@@ -26,12 +27,15 @@ public class AccountSubscriptionsController {
 
     private final SubscriptionCommandService subscriptionCommandService;
     private final PaypalService paypalService;
+    private final PlanRepository planRepository;
 
     public AccountSubscriptionsController(
             SubscriptionCommandService subscriptionCommandService,
-            PaypalService paypalService) {
+            PaypalService paypalService,
+            PlanRepository planRepository) {
         this.subscriptionCommandService = subscriptionCommandService;
         this.paypalService = paypalService;
+        this.planRepository = planRepository;
     }
 
     @PostMapping
@@ -41,52 +45,59 @@ public class AccountSubscriptionsController {
             @Parameter(description = "Account ID", required = true) @PathVariable String accountId,
             @RequestBody CreateSubscriptionAssembler request) {
         try {
+            System.err.println("[createSubscription] accountId=" + accountId + ", selectedPlanId=" + request.selectedPlanId());
+            var requested = request.selectedPlanId();
+            var planOpt = planRepository.findByPlanId(requested);
+            if (planOpt.isEmpty()) planOpt = planRepository.findByPlanId(requested != null ? requested.trim() : null);
+            var plan = planOpt.orElseGet(() -> {
+                var normalized = requested != null ? requested.trim().toLowerCase() : "";
+                var all = planRepository.findAll();
+                var match = all.stream()
+                    .filter(p -> p.getPlanId() != null && p.getPlanId().trim().toLowerCase().equals(normalized))
+                    .findFirst();
+                if (match.isPresent()) return match.get();
+                System.err.println("[createSubscription] plan not found. requested=" + requested + ", availablePlanIds=" +
+                        all.stream().map(p -> p.getPlanId()).toList());
+                throw new IllegalArgumentException("Plan not found");
+            });
+            System.err.println("[createSubscription] plan found: id=" + plan.getId() + ", planId=" + plan.getPlanId() + ", type=" + plan.getPlanType() + ", currency=" + plan.getCurrency() + ", price=" + plan.getPrice());
+
             var command = new CreateSubscriptionCommand(
-                UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, 
-                Long.parseLong(request.selectedPlanId()), 
-                "PLAN-" + request.selectedPlanId(), 
-                "USD",
-                99.99 
+                Long.parseLong(accountId), 
+                Long.valueOf(plan.getId()), 
+                "Free".equals(plan.getPlanType()) ? null : plan.getPaypalSubscriptionId(), 
+                plan.getCurrency(),
+                plan.getPrice()
             );
-            
+            System.err.println("[createSubscription] command built: userId=" + command.userId() + ", planDbId=" + command.planId() + ", paypalSubId=" + command.paypalSubscriptionId());
+
             Subscription subscription = subscriptionCommandService.handle(command);
-            
-            List<PaypalOrderItem> items = List.of(
-                new PaypalOrderItem(
-                    "Subscription Plan", 
-                    "Monthly subscription for " + request.selectedPlanId(),
-                    "PLAN-" + request.selectedPlanId(),
-                    BigDecimal.valueOf(99.99),
-                    BigDecimal.ZERO,
-                    1,
-                    "DIGITAL_GOODS"
-                )
-            );
-            
-            PaypalOrder paypalOrder = paypalService.createOrder(
-                BigDecimal.valueOf(99.99), 
-                "USD", 
-                items
-            );
-            
+            System.err.println("[createSubscription] subscription saved: id=" + subscription.getId() + ", status=" + subscription.getStatus());
+
             SubscriptionAssembler response = SubscriptionAssembler.fromSubscriptionWithPayment(
                 subscription.getId().toString(),
-                subscription.getPlanId().toString(),
+                plan.getPlanId(), // use the plan's identifier
                 subscription.getStatus(),
                 subscription.getNextBillingDate() != null ? subscription.getNextBillingDate().toString() : "2024-12-31",
                 "MONTHLY",
                 "MONTHLY",
-                500, 
-                paypalOrder.getPaypalOrderId(),
-                "https://www.paypal.com/checkoutnow?token=" + paypalOrder.getPaypalOrderId(),
-                "Subscription created successfully. Please complete payment."
+                plan.getMaxProducts(),
+                null,
+                null,
+                "Subscription created successfully with plan's PayPal subscription ID."
             );
-            
+
             return ResponseEntity.status(201).body(response);
             
-        } catch (Exception e) {
-            System.err.println("Error creating subscription: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("createSubscription error: " + e.getMessage());
+            if ("Plan not found".equals(e.getMessage())) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            System.err.println("createSubscription unexpected error: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -132,8 +143,7 @@ public class AccountSubscriptionsController {
             return ResponseEntity.status(201).body(response);
             
         } catch (Exception e) {
-            System.err.println("Error upgrading subscription: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -156,7 +166,6 @@ public class AccountSubscriptionsController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            System.err.println("Error retrieving subscription: " + e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }

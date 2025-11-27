@@ -28,7 +28,7 @@ public class SubscriptionRepositoryImpl implements SubscriptionRepository {
     }
 
     @Override
-    public Optional<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId) {
+    public List<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId) {
         return jpaRepository.findByPaypalSubscriptionId(paypalSubscriptionId);
     }
 

@@ -11,7 +11,7 @@ public interface SubscriptionRepository {
 
     Optional<Subscription> findById(Long id);
 
-    Optional<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId);
+    List<Subscription> findByPaypalSubscriptionId(String paypalSubscriptionId);
 
     List<Subscription> findByUserId(Long userId);
 
