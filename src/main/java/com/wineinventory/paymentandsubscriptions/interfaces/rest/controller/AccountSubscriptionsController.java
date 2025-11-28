@@ -8,8 +8,11 @@ import com.wineinventory.paymentandsubscriptions.application.internal.outboundse
 import com.wineinventory.paymentandsubscriptions.application.internal.outboundservices.paymentproviders.models.PaypalOrder;
 import com.wineinventory.paymentandsubscriptions.application.internal.outboundservices.paymentproviders.models.PaypalOrderItem;
 import com.wineinventory.paymentandsubscriptions.application.internal.commandservices.SubscriptionCommandService;
+import com.wineinventory.paymentandsubscriptions.application.internal.queryservices.SubscriptionQueryService;
 import com.wineinventory.paymentandsubscriptions.domain.model.aggregates.Subscription;
 import com.wineinventory.paymentandsubscriptions.domain.model.commands.CreateSubscriptionCommand;
+import com.wineinventory.paymentandsubscriptions.infrastructure.external.paypal.PayPalSubscriptionService;
+import com.wineinventory.paymentandsubscriptions.domain.model.queries.PayPalCreateSubscriptionQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,14 +31,20 @@ public class AccountSubscriptionsController {
 
     private final SubscriptionCommandService subscriptionCommandService;
     private final PaypalService paypalService;
+    private final SubscriptionQueryService subscriptionQueryService;
+    private final PayPalSubscriptionService payPalSubscriptionService;
     private final PlanRepository planRepository;
 
     public AccountSubscriptionsController(
             SubscriptionCommandService subscriptionCommandService,
             PaypalService paypalService,
+            SubscriptionQueryService subscriptionQueryService,
+            PayPalSubscriptionService payPalSubscriptionService,
             PlanRepository planRepository) {
         this.subscriptionCommandService = subscriptionCommandService;
         this.paypalService = paypalService;
+        this.subscriptionQueryService = subscriptionQueryService;
+        this.payPalSubscriptionService = payPalSubscriptionService;
         this.planRepository = planRepository;
     }
 
@@ -43,9 +53,21 @@ public class AccountSubscriptionsController {
                description = "Initializes a new subscription for the specified account.")
     public ResponseEntity<SubscriptionAssembler> createSubscription(
             @Parameter(description = "Account ID", required = true) @PathVariable String accountId,
-            @RequestBody CreateSubscriptionAssembler request) {
+            @RequestBody CreateSubscriptionAssembler request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         try {
             System.err.println("[createSubscription] accountId=" + accountId + ", selectedPlanId=" + request.selectedPlanId());
+            if (accountId == null || accountId.isBlank()) return ResponseEntity.badRequest().build();
+            if (request == null || request.selectedPlanId() == null || request.selectedPlanId().isBlank()) return ResponseEntity.badRequest().build();
+
+            Long userId = Long.parseLong(accountId);
+
+            var existing = subscriptionQueryService.handleFindByUser(userId).stream()
+                    .filter(s -> "ACTIVE".equalsIgnoreCase(s.getStatus()))
+                    .findFirst();
+            if (existing.isPresent()) {
+                return ResponseEntity.status(409).build();
+            }
             var requested = request.selectedPlanId();
             var planOpt = planRepository.findByPlanId(requested);
             if (planOpt.isEmpty()) planOpt = planRepository.findByPlanId(requested != null ? requested.trim() : null);
@@ -62,29 +84,58 @@ public class AccountSubscriptionsController {
             });
             System.err.println("[createSubscription] plan found: id=" + plan.getId() + ", planId=" + plan.getPlanId() + ", type=" + plan.getPlanType() + ", currency=" + plan.getCurrency() + ", price=" + plan.getPrice());
 
-            var command = new CreateSubscriptionCommand(
-                Long.parseLong(accountId), 
-                Long.valueOf(plan.getId()), 
-                "Free".equals(plan.getPlanType()) ? null : plan.getPaypalSubscriptionId(), 
-                plan.getCurrency(),
-                plan.getPrice()
-            );
-            System.err.println("[createSubscription] command built: userId=" + command.userId() + ", planDbId=" + command.planId() + ", paypalSubId=" + command.paypalSubscriptionId());
+            Subscription subscription;
+            String planType = plan.getPlanType();
+            if ("Free".equalsIgnoreCase(planType)) {
+                var command = new CreateSubscriptionCommand(
+                        userId,
+                        plan.getId(),
+                        null,
+                        plan.getCurrency(),
+                        plan.getPrice(),
+                        "ACTIVE",
+                        null
+                );
+                subscription = subscriptionCommandService.handle(command);
+            } else {
+                if (plan.getPaypalPlanId() == null || plan.getPaypalPlanId().isBlank()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                PayPalCreateSubscriptionQuery pp = (idempotencyKey != null && !idempotencyKey.isBlank())
+                        ? payPalSubscriptionService.createSubscription(plan.getPaypalPlanId(), idempotencyKey)
+                        : payPalSubscriptionService.createSubscription(plan.getPaypalPlanId());
 
-            Subscription subscription = subscriptionCommandService.handle(command);
+                String approvalUrl = pp.links().stream()
+                        .filter(l -> "approve".equalsIgnoreCase(l.rel()))
+                        .map(PayPalCreateSubscriptionQuery.PayPalLink::href)
+                        .findFirst()
+                        .orElse(null);
+
+                var command = new CreateSubscriptionCommand(
+                        userId,
+                        plan.getId(),
+                        pp.id(),
+                        plan.getCurrency(),
+                        plan.getPrice(),
+                        "PENDING_APPROVAL",
+                        approvalUrl
+                );
+                subscription = subscriptionCommandService.handle(command);
+            }
             System.err.println("[createSubscription] subscription saved: id=" + subscription.getId() + ", status=" + subscription.getStatus());
 
             SubscriptionAssembler response = SubscriptionAssembler.fromSubscriptionWithPayment(
                 subscription.getId().toString(),
-                plan.getPlanId(), // use the plan's identifier
+                plan.getPlanId(), 
                 subscription.getStatus(),
-                subscription.getNextBillingDate() != null ? subscription.getNextBillingDate().toString() : "2024-12-31",
-                "MONTHLY",
-                "MONTHLY",
+                subscription.getNextBillingDate() != null ? subscription.getNextBillingDate().toString() : null,
+                plan.getPlanType(),
+                plan.getPaymentFrequency(),
                 plan.getMaxProducts(),
-                null,
-                null,
-                "Subscription created successfully with plan's PayPal subscription ID."
+                subscription.getPaypalSubscriptionId(),
+                subscription.getApprovalUrl(),
+                subscription.getApprovalUrl(),
+                "Subscription created. Redirect user to approvalUrl."
             );
 
             return ResponseEntity.status(201).body(response);
@@ -134,8 +185,9 @@ public class AccountSubscriptionsController {
                 "2024-12-31",
                 "MONTHLY",
                 "MONTHLY",
-                1000, 
+                1000,
                 paypalOrder.getPaypalOrderId(),
+                "https://www.paypal.com/checkoutnow?token=" + paypalOrder.getPaypalOrderId(),
                 "https://www.paypal.com/checkoutnow?token=" + paypalOrder.getPaypalOrderId(),
                 "Subscription upgrade initiated. Please complete payment."
             );
@@ -153,14 +205,28 @@ public class AccountSubscriptionsController {
     public ResponseEntity<SubscriptionAssembler> getSubscriptionByAccountId(
             @Parameter(description = "Account ID", required = true) @PathVariable String accountId) {
         try {
-            SubscriptionAssembler response = SubscriptionAssembler.fromSubscription(
-                "SUB-" + UUID.randomUUID().toString().substring(0, 8),
-                "PLAN-001",
-                "ACTIVE",
-                "2024-12-31",
-                "MONTHLY",
-                "MONTHLY",
-                500
+            Long userId = Long.parseLong(accountId);
+            var list = subscriptionQueryService.handleFindByUser(userId);
+            if (list == null || list.isEmpty()) return ResponseEntity.notFound().build();
+            var subscription = list.stream().max(Comparator.comparingLong(Subscription::getId)).get();
+            var plan = planRepository.findById(subscription.getPlanId()).orElse(null);
+            String planIdentifier = plan != null ? plan.getPlanId() : null;
+            String planType = plan != null ? plan.getPlanType() : null;
+            String paymentFrequency = plan != null ? plan.getPaymentFrequency() : null;
+            Integer maxProducts = plan != null ? plan.getMaxProducts() : null;
+
+            SubscriptionAssembler response = SubscriptionAssembler.fromSubscriptionWithPayment(
+                    subscription.getId().toString(),
+                    planIdentifier,
+                    subscription.getStatus(),
+                    subscription.getNextBillingDate() != null ? subscription.getNextBillingDate().toString() : null,
+                    planType,
+                    paymentFrequency,
+                    maxProducts,
+                    subscription.getPaypalSubscriptionId(),
+                    subscription.getApprovalUrl(),
+                    subscription.getApprovalUrl(),
+                    null
             );
             
             return ResponseEntity.ok(response);

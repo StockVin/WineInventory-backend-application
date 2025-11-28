@@ -31,6 +31,9 @@ public class Subscription {
 
     private LocalDateTime startDate;
     private LocalDateTime nextBillingDate;
+    
+    @Column(name = "approval_url")
+    private String approvalUrl;
 
     protected Subscription() {}
 
@@ -42,7 +45,8 @@ public class Subscription {
             String currency,
             Double amount,
             LocalDateTime startDate,
-            LocalDateTime nextBillingDate) {
+            LocalDateTime nextBillingDate,
+            String approvalUrl) {
 
         this.userId = userId;
         this.planId = planId;
@@ -52,6 +56,7 @@ public class Subscription {
         this.amount = amount;
         this.startDate = startDate;
         this.nextBillingDate = nextBillingDate;
+        this.approvalUrl = approvalUrl;
     }
 
     public Long getId() {
@@ -89,6 +94,10 @@ public class Subscription {
     public LocalDateTime getNextBillingDate() {
         return nextBillingDate;
     }
+    
+    public String getApprovalUrl() {
+        return approvalUrl;
+    }
 
     public void activate() {
         this.status = "ACTIVE";
@@ -105,6 +114,9 @@ public class Subscription {
     }
     public void setPaypalSubscriptionId(String paypalSubscriptionId) {
         this.paypalSubscriptionId = paypalSubscriptionId;
+    }
+    public void setApprovalUrl(String approvalUrl) {
+        this.approvalUrl = approvalUrl;
     }
 
 

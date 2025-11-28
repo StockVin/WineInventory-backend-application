@@ -21,16 +21,16 @@ public class SubscriptionCommandServiceImpl implements SubscriptionCommandServic
 
     @Override
     public Subscription handle(CreateSubscriptionCommand command) {
-        // Always create subscription with the provided PayPal subscription ID
         Subscription subscription = new Subscription(
                 command.userId(),
                 command.planId(),
                 command.paypalSubscriptionId(),
-                "ACTIVE",
+                command.status(),
                 command.currency(),
                 command.amount(),
                 LocalDateTime.now(),
-                null
+                null,
+                command.approvalUrl()
         );
         return subscriptionRepository.save(subscription);
     }
@@ -48,9 +48,23 @@ public class SubscriptionCommandServiceImpl implements SubscriptionCommandServic
     @Override
     public void handle(WebhookPaymentCommand command) {
         try {
-            System.out.println("Processing webhook for payment ID: " + command.paymentId());
-            System.out.println("Webhook processed successfully for payment: " + command.paymentId());
-            
+            String paypalSubscriptionId = command.paymentId();
+            if (paypalSubscriptionId == null || paypalSubscriptionId.isBlank()) return;
+
+            var matches = subscriptionRepository.findByPaypalSubscriptionId(paypalSubscriptionId);
+            if (matches == null || matches.isEmpty()) {
+                System.out.println("Webhook received for unknown subscription: " + paypalSubscriptionId);
+                return;
+            }
+
+            for (Subscription subscription : matches) {
+                subscription.setStatus("ACTIVE");
+                if (subscription.getNextBillingDate() == null) {
+                    subscription.setNextBillingDate(LocalDateTime.now().plusMonths(1));
+                }
+                subscriptionRepository.save(subscription);
+            }
+            System.out.println("Webhook processed and subscriptions updated for: " + paypalSubscriptionId);
         } catch (Exception e) {
             System.err.println("Error processing webhook payment: " + e.getMessage());
             throw new RuntimeException("Failed to process webhook payment", e);

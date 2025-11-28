@@ -5,5 +5,7 @@ public record CreateSubscriptionCommand(
         Long planId,
         String paypalSubscriptionId,
         String currency,
-        Double amount
+        Double amount,
+        String status,
+        String approvalUrl
 ) {}
