@@ -116,10 +116,14 @@ public class WebSecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/api/v1/accounts/by-email")
+                                "/api/v1/accounts/by-email",
+                                "/api/v1/subscriptions/paypal/return",
+                                "/api/v1/subscriptions/paypal/cancel",
+                                "/api/v1/subscriptions")
                         .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/sign-up").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/subscriptions").permitAll()
                         .anyRequest().authenticated());
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);

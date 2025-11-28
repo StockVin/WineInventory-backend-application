@@ -6,6 +6,7 @@ import com.wineinventory.paymentandsubscriptions.domain.model.queries.PayPalCrea
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpHeaders;
 
 @Service
 public class PayPalSubscriptionService {
@@ -41,6 +42,33 @@ public class PayPalSubscriptionService {
         ResponseEntity<PayPalCreateSubscriptionQuery> response =
                 payPalClient.post("/v1/billing/subscriptions", request, PayPalCreateSubscriptionQuery.class);
 
+        return response.getBody();
+    }
+
+    public PayPalCreateSubscriptionQuery createSubscription(String paypalPlanId, String idempotencyKey) {
+        PayPalApplicationCommnad context = new PayPalApplicationCommnad(
+                "WineInventory",
+                "en-US",
+                "SUBSCRIBE_NOW",
+                returnUrl,
+                cancelUrl
+        );
+
+        PayPalCreateSubscriptionCommand request = new PayPalCreateSubscriptionCommand(
+                paypalPlanId,
+                null,
+                context
+        );
+
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return createSubscription(paypalPlanId);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("PayPal-Request-Id", idempotencyKey);
+
+        ResponseEntity<PayPalCreateSubscriptionQuery> response =
+                payPalClient.postWithHeaders("/v1/billing/subscriptions", request, PayPalCreateSubscriptionQuery.class, headers);
         return response.getBody();
     }
 }
